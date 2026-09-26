@@ -18,10 +18,14 @@ let t = 0; const ok = (m) => { t++; console.log("✓", m); };
 let r = await post(lead); assert.equal(r.status, 200); assert.equal(enviado.key, "LLAVE");
 assert.equal(enviado.body.nombre, "Ana López"); assert.equal(enviado.body.b2_campanas, 4); assert.equal(enviado.body.results_url, lead.results_url); ok("lead real pasa intacto, con llave");
 // 2 fórmulas neutralizadas
-r = await post({ ...lead, nombre: "=IMPORTXML(\"http://malo\";\"//a\")", c1_rubro: "+1+1", c2_modelo: "@cmd", c3_costo: "-2" });
-assert.equal(enviado.body.nombre[0], "'"); assert.equal(enviado.body.c1_rubro, "'+1+1"); assert.equal(enviado.body.c2_modelo, "'@cmd"); assert.equal(enviado.body.c3_costo, "'-2"); ok("fórmulas = + - @ neutralizadas");
+r = await post({ ...lead, nombre: "=IMPORTXML(\"http://malo\";\"//a\")", c1_rubro: "+ HYPERLINK(1)", c2_modelo: "@cmd" });
+assert.equal(enviado.body.nombre[0], "'"); assert.equal(enviado.body.c1_rubro, "'+ HYPERLINK(1)"); assert.equal(enviado.body.c2_modelo, "'@cmd"); ok("fórmulas =, @ y +función neutralizadas");
 // 3 número negativo legítimo no se rompe (llega como número)
 assert.equal(limpiar(-2), -2); ok("números siguen siendo números");
+// 3b teléfonos y negativos numéricos no se tocan; +IMPORT sí
+await post({ ...lead, telefono: "+52 81 1234 5678", c3_costo: "-350", c4_traba: "+IMPORTXML(1)", c2_modelo: "-SUM(1)" });
+assert.equal(enviado.body.telefono, "+52 81 1234 5678"); assert.equal(enviado.body.c3_costo, "-350"); assert.equal(enviado.body.c4_traba, "'+IMPORTXML(1)"); assert.equal(enviado.body.c2_modelo, "'-SUM(1)"); ok("teléfono +52 intacto, -350 intacto, +IMPORTXML y -SUM escudados");
+assert.equal(limpiar("=1+1", "telefono"), "=1+1"); ok("campo telefono nunca lleva apóstrofe");
 // 4 rechazos
 assert.equal((await post(lead, "https://otro.com")).status, 403); ok("otro origen: 403");
 assert.equal((await post(lead, ORIGEN, "GET")).status, 405); ok("GET: 405");

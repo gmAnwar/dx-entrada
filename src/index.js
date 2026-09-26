@@ -2,8 +2,9 @@
  * página → este Worker → Make (con llave)
  * 1. solo POST JSON desde diagnostico.anwarsepulveda.com
  * 2. forma correcta: action permitida, correo con forma de correo, 10 respuestas 1-4
- * 3. neutraliza fórmulas (= + - @ al inicio) en todo texto
- * 4. límite por IP: 20 envíos cada 10 minutos (una persona real hace 3-6)
+ * 3. neutraliza fórmulas: "=" y "@" al inicio siempre; "+" y "-" solo si les sigue letra o paréntesis
+ *    (así +52 81 1234 5678 sigue siendo teléfono; el campo telefono no se toca)
+ * 4. límite por IP: 10 envíos por minuto (una persona real hace 2-4 en su peor minuto)
  * 5. reenvía a Make con x-make-apikey (secreto MAKE_KEY, lo pega Anwar en Cloudflare)
  */
 
@@ -13,12 +14,13 @@ const CAMPOS_MAX = 60;          // campos por envío
 const TEXTO_MAX = 500;          // caracteres por campo
 const RESPUESTAS = ["b1_presupuesto","b2_campanas","b3_equipo","b4_metricas","b5_automatizacion","b6_ventas","b7_oferta","b8_cliente","b9_respuesta","b10_creatividades"];
 
-export function limpiar(v) {
+const SIN_ESCUDO = new Set(["telefono", "phone"]);
+export function limpiar(v, k) {
   if (typeof v === "number") return Number.isFinite(v) ? v : "";
   if (typeof v === "boolean") return v;
   if (v == null) return "";
   let s = String(v).slice(0, TEXTO_MAX).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
-  if (/^[\s]*[=+\-@\t\r]/.test(s)) s = "'" + s;   // Sheets ya no lo lee como fórmula
+  if (!SIN_ESCUDO.has(k) && /^\s*(?:[=@]|[+\-]\s*[A-Za-z(])/.test(s)) s = "'" + s;   // Sheets ya no lo lee como fórmula
   return s;
 }
 
@@ -39,7 +41,7 @@ export function validar(d) {
 
 export function sanear(d) {
   const out = {};
-  for (const k of Object.keys(d)) if (/^[a-z0-9_]{1,40}$/i.test(k)) out[k] = limpiar(d[k]);
+  for (const k of Object.keys(d)) if (/^[a-z0-9_]{1,40}$/i.test(k)) out[k] = limpiar(d[k], k);
   return out;
 }
 
