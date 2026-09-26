@@ -1,0 +1,13 @@
+name = "dx-entrada"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+# Secretos (los pega Anwar en Cloudflare → Workers → dx-entrada → Settings → Variables):
+#   MAKE_URL  = https://hook.us2.make.com/136bp8giaczmgcv5mh8k4betdqh7uwd1
+#   MAKE_KEY  = la llave que Make genere para el webhook
+
+[[unsafe.bindings]]
+name = "LIMITE"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 20, period = 600 }
