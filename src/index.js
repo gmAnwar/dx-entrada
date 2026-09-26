@@ -3,7 +3,7 @@
  * 1. solo POST JSON desde diagnostico.anwarsepulveda.com
  * 2. forma correcta: action permitida, correo con forma de correo, 10 respuestas 1-4
  * 3. neutraliza fórmulas: "=" y "@" al inicio siempre; "+" y "-" solo si les sigue letra o paréntesis
- *    (así +52 81 1234 5678 sigue siendo teléfono; el campo telefono no se toca)
+ *    (así +52 81 1234 5678 sigue siendo teléfono; telefono/phone solo se saltan el escudo si traen puro + dígitos espacios ( ) - .)
  * 4. límite por IP: 10 envíos por minuto (una persona real hace 2-4 en su peor minuto)
  * 5. reenvía a Make con x-make-apikey (secreto MAKE_KEY, lo pega Anwar en Cloudflare)
  */
@@ -20,7 +20,8 @@ export function limpiar(v, k) {
   if (typeof v === "boolean") return v;
   if (v == null) return "";
   let s = String(v).slice(0, TEXTO_MAX).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
-  if (!SIN_ESCUDO.has(k) && /^\s*(?:[=@]|[+\-]\s*[A-Za-z(])/.test(s)) s = "'" + s;   // Sheets ya no lo lee como fórmula
+  const esTel = SIN_ESCUDO.has(k) && /^\s*\+?[\d\s().-]{7,20}$/.test(s);   // solo si de verdad parece teléfono
+  if (!esTel && /^\s*(?:[=@]|[+\-]\s*[A-Za-z(])/.test(s)) s = "'" + s;   // Sheets ya no lo lee como fórmula
   return s;
 }
 
