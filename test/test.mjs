@@ -35,6 +35,17 @@ assert.equal((await post({ ...lead, email: "no-es-correo" })).status, 422); ok("
 assert.equal((await post({ ...lead, b3_equipo: 9 })).status, 422); ok("respuesta 9: 422");
 assert.equal((await post({ ...lead, extra: { anidado: 1 } })).status, 422); ok("objeto anidado: 422");
 const gordo = { ...lead }; for (let i = 0; i < 70; i++) gordo["x" + i] = i; assert.equal((await post(gordo)).status, 422); ok("70 campos: 422");
+// 4b casos.anwarsepulveda.com: correo y lista de espera
+const casos = { action: "casos_correo", email: "ana@negocio.mx", producto: "casos", content_name: "persianas-01", source: "casos-final", ab_gate: "B", vid: "abc" };
+r = await post(casos, "https://casos.anwarsepulveda.com"); assert.equal(r.status, 200); assert.equal(enviado.body.action, "casos_correo"); assert.equal(enviado.body.ab_gate, "B");
+assert.equal(r.headers.get("Access-Control-Allow-Origin"), "https://casos.anwarsepulveda.com"); ok("casos: correo pasa con su origen");
+assert.equal((await post({ ...casos, action: "casos_lista" }, "https://casos.anwarsepulveda.com")).status, 200); ok("casos: lista de espera pasa");
+assert.equal((await post({ ...casos, email: "sin-arroba" }, "https://casos.anwarsepulveda.com")).status, 422); ok("casos: correo inválido 422");
+// 4c home: el correo de anwarsepulveda.com pasa por aquí (antes iba directo a Make sin llave)
+const home = { action: "newsletter_signup", email: "ana@negocio.mx", origen: "home", fecha: "2026-11-06T00:00:00Z", utm_source: "directo" };
+r = await post(home, "https://anwarsepulveda.com"); assert.equal(r.status, 200); assert.equal(enviado.body.action, "newsletter_signup"); assert.equal(enviado.key, "LLAVE");
+assert.equal(r.headers.get("Access-Control-Allow-Origin"), "https://anwarsepulveda.com"); ok("home: correo pasa con llave");
+assert.equal((await post(home, "https://www.anwarsepulveda.com")).status, 200); ok("home con www: pasa");
 // 5 texto largo se recorta a 500
 await post({ ...lead, c4_traba: "a".repeat(5000) }); assert.equal(enviado.body.c4_traba.length, 500); ok("texto de 5000 → 500");
 // 6 límite por IP

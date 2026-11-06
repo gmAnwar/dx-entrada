@@ -1,6 +1,6 @@
 /* dx-entrada · puerta de entrada del diagnosticador
  * página → este Worker → Make (con llave)
- * 1. solo POST JSON desde diagnostico.anwarsepulveda.com
+ * 1. solo POST JSON desde diagnostico., casos. (correo y lista de espera de los casos) y anwarsepulveda.com (correo de la home)
  * 2. forma correcta: action permitida, correo con forma de correo, 10 respuestas 1-4
  * 3. neutraliza fórmulas: "=" y "@" al inicio siempre; "+" y "-" solo si les sigue letra o paréntesis
  *    (así +52 81 1234 5678 sigue siendo teléfono; telefono/phone solo se saltan el escudo si traen puro + dígitos espacios ( ) - .)
@@ -8,8 +8,8 @@
  * 5. reenvía a Make con x-make-apikey (secreto MAKE_KEY, lo pega Anwar en Cloudflare)
  */
 
-const ORIGENES = new Set(["https://diagnostico.anwarsepulveda.com"]);
-const ACCIONES = new Set(["quiz_start", "quiz_complete", "waitlist", "cta_llamada", "detalle_view", "momento", "purchase", "send_email"]);
+const ORIGENES = new Set(["https://diagnostico.anwarsepulveda.com", "https://casos.anwarsepulveda.com", "https://anwarsepulveda.com", "https://www.anwarsepulveda.com"]);
+const ACCIONES = new Set(["quiz_start", "quiz_complete", "waitlist", "cta_llamada", "detalle_view", "momento", "purchase", "send_email", "casos_correo", "casos_lista", "newsletter_signup"]);
 const CAMPOS_MAX = 60;          // campos por envío
 const TEXTO_MAX = 500;          // caracteres por campo
 const RESPUESTAS = ["b1_presupuesto","b2_campanas","b3_equipo","b4_metricas","b5_automatizacion","b6_ventas","b7_oferta","b8_cliente","b9_respuesta","b10_creatividades"];
